@@ -75,7 +75,6 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
   },
 
-  // NEW wrapper to center everything
   centerWrapper: {
     alignItems: "center",
   },
@@ -83,14 +82,14 @@ const styles = StyleSheet.create({
   dropdownButton: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",  // center text + icon
+    justifyContent: "center",  
     backgroundColor: "white",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 10,
-    width: 260,                // keeps it centered visually
+    width: 260,            
   },
 
   dropdownText: {
@@ -108,7 +107,7 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 6,
-    width: 260,               // match button width for perfect alignment
+    width: 260,              
   },
 
   menuItem: {
