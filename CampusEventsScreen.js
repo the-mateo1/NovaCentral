@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { FlatList, StyleSheet, Text, View, Image } from "react-native";
 
-const EventsScreen = () => {
+const CampusEventsScreen = () => {
   const [events, setEvents] = useState([]);
 
   const loadEvents = () => {
@@ -96,4 +96,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EventsScreen;
+export default CampusEventsScreen;
