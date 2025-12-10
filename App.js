@@ -22,10 +22,9 @@ export default function App() {
 
         <Tab.Screen name="Events" component={CombinedEventsScreen} />
         <Tab.Screen name="Dining" component={DiningScreen} />
+        <Tab.Screen name="Schedule" component={Schedule} />
         <Tab.Screen name="Academics" component={AcademicsScreen} />
         <Tab.Screen name="MyNova" component={MyNovaScreen} />
-        <Tab.Screen name="Schedule" component={Schedule} />
-
 
       </Tab.Navigator>
 

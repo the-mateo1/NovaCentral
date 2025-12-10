@@ -137,6 +137,7 @@ export default function Schedule() {
               <TextInput
                 style={styles.input}
                 placeholder="Class Name *"
+                placeholderTextColor="#555"
                 value={currentClass.name}
                 onChangeText={(text) => setCurrentClass({...currentClass, name: text})}
               />
@@ -165,6 +166,7 @@ export default function Schedule() {
               <TextInput
                 style={styles.input}
                 placeholder="Start Time (e.g., 9:00 AM) *"
+                placeholderTextColor="#555"
                 value={currentClass.startTime}
                 onChangeText={(text) => setCurrentClass({...currentClass, startTime: text})}
               />
@@ -172,6 +174,7 @@ export default function Schedule() {
               <TextInput
                 style={styles.input}
                 placeholder="End Time (e.g., 10:30 AM)"
+                placeholderTextColor="#555"
                 value={currentClass.endTime}
                 onChangeText={(text) => setCurrentClass({...currentClass, endTime: text})}
               />
@@ -179,6 +182,7 @@ export default function Schedule() {
               <TextInput
                 style={styles.input}
                 placeholder="Room (e.g., Building A 201)"
+                placeholderTextColor="#555"
                 value={currentClass.room}
                 onChangeText={(text) => setCurrentClass({...currentClass, room: text})}
               />
@@ -186,6 +190,7 @@ export default function Schedule() {
               <TextInput
                 style={styles.input}
                 placeholder="Professor"
+                placeholderTextColor="#555"
                 value={currentClass.professor}
                 onChangeText={(text) => setCurrentClass({...currentClass, professor: text})}
               />
