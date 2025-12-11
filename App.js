@@ -8,6 +8,7 @@ import MyNovaScreen from './MyNovaScreen.js';
 import AcademicsScreen from './AcademicsScreen';
 import CombinedEventsScreen from './CombinedEventsScreen.js';
 import Schedule from './Schedule.js';
+import LoginScreen from './LoginScreen';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -15,7 +16,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 const Tab = createBottomTabNavigator();
 
-export default function App() {
+export default function App({ user }) {
   return (
     <NavigationContainer>
       <Tab.Navigator screenOptions={{ headerShown: true }}>
