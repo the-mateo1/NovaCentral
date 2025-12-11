@@ -1,0 +1,30 @@
+{
+    "project_info": {
+      "project_number": "583381013414",
+      "project_id": "novacentral-fface",
+      "storage_bucket": "novacentral-fface.firebasestorage.app"
+    },
+    "client": [
+      {
+        "client_info": {
+          "mobilesdk_app_id": "1:583381013414:android:3ef2a8c1c400b7403ff567",
+          "android_client_info": {
+            "package_name": "com.Villanova.NovaCentral"
+          }
+        },
+        "oauth_client": [],
+        "api_key": [
+          {
+            "current_key": "AIzaSyBuZMijGpfNcm_Qe_2OEbhCyHOOdBOBt4E"
+          }
+        ],
+        "services": {
+          "appinvite_service": {
+            "other_platform_oauth_client": []
+          }
+        }
+      }
+    ],
+    "configuration_version": "1"
+  }
+  

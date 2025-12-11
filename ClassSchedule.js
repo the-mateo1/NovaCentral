@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
+import { auth, db } from './FirebaseConfig';
 
-export default function Schedule() {
+export default function ClassSchedule() {
   const [classes, setClasses] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingIndex, setEditingIndex] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [currentClass, setCurrentClass] = useState({
     name: '',
     days: [],
@@ -16,10 +20,49 @@ export default function Schedule() {
 
   const daysOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
-  const openModal = (index = null) => {
-    if (index !== null) {
-      setCurrentClass(classes[index]);
-      setEditingIndex(index);
+  useEffect(() => {
+    if (!auth.currentUser) {
+      setLoading(false);
+      return;
+    }
+
+    const userId = auth.currentUser.uid;
+    const classesRef = collection(db, 'classes');
+    const q = query(classesRef, where('userId', '==', userId));
+
+    const unsubscribe = onSnapshot(q, 
+      (querySnapshot) => {
+        const loadedClasses = [];
+        querySnapshot.forEach((doc) => {
+          loadedClasses.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+        setClasses(loadedClasses);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error loading classes:', error);
+        Alert.alert('Error', 'Failed to load classes');
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  const openModal = (classItem = null) => {
+    if (classItem) {
+      setCurrentClass({
+        name: classItem.name,
+        days: classItem.days,
+        startTime: classItem.startTime,
+        endTime: classItem.endTime,
+        room: classItem.room,
+        professor: classItem.professor
+      });
+      setEditingId(classItem.id);
     } else {
       setCurrentClass({
         name: '',
@@ -29,7 +72,7 @@ export default function Schedule() {
         room: '',
         professor: ''
       });
-      setEditingIndex(null);
+      setEditingId(null);
     }
     setModalVisible(true);
   };
@@ -45,25 +88,65 @@ export default function Schedule() {
     setCurrentClass({...currentClass, days});
   };
 
-  const saveClass = () => {
+  const saveClass = async () => {
     if (!currentClass.name || currentClass.days.length === 0 || !currentClass.startTime) {
-      alert('Please fill in class name, at least one day, and start time');
+      Alert.alert('Error', 'Please fill in class name, at least one day, and start time');
       return;
     }
 
-    if (editingIndex !== null) {
-      const updated = [...classes];
-      updated[editingIndex] = currentClass;
-      setClasses(updated);
-    } else {
-      setClasses([...classes, currentClass]);
+    try {
+      const userId = auth.currentUser.uid;
+      const classData = {
+        ...currentClass,
+        userId,
+        updatedAt: new Date().toISOString()
+      };
+
+      if (editingId) {
+        // Update existing class
+        const classRef = doc(db, 'classes', editingId);
+        await updateDoc(classRef, classData);
+      } else {
+        // Add new class
+        classData.createdAt = new Date().toISOString();
+        await addDoc(collection(db, 'classes'), classData);
+      }
+
+      setModalVisible(false);
+    } catch (error) {
+      console.error('Error saving class:', error);
+      Alert.alert('Error', 'Failed to save class. Please try again.');
     }
-    setModalVisible(false);
   };
 
-  const deleteClass = (index) => {
-    const updated = classes.filter((_, i) => i !== index);
-    setClasses(updated);
+  const deleteClass = async (id) => {
+    Alert.alert(
+      'Delete Class',
+      'Are you sure you want to delete this class?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(db, 'classes', id));
+            } catch (error) {
+              console.error('Error deleting class:', error);
+              Alert.alert('Error', 'Failed to delete class. Please try again.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to logout. Please try again.');
+    }
   };
 
   const groupByDay = () => {
@@ -76,15 +159,29 @@ export default function Schedule() {
     return grouped;
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Loading your schedule...</Text>
+      </View>
+    );
+  }
+
   const schedule = groupByDay();
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>My Class Schedule</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => openModal()}>
-          <Text style={styles.addButtonText}>+ Add Class</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'column', gap: 10 }}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.addButton} onPress={() => openModal()}>
+            <Text style={styles.addButtonText}>+ Add Class</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.scheduleContainer}>
@@ -92,32 +189,29 @@ export default function Schedule() {
           schedule[day].length > 0 && (
             <View key={day} style={styles.daySection}>
               <Text style={styles.dayHeader}>{day}</Text>
-              {schedule[day].map((cls, idx) => {
-                const actualIndex = classes.findIndex(c => c === cls);
-                return (
-                  <View key={idx} style={styles.classCard}>
-                    <View style={styles.classInfo}>
-                      <Text style={styles.className}>{cls.name}</Text>
-                      <Text style={styles.classTime}>
-                        {cls.startTime} - {cls.endTime}
-                      </Text>
-                      <Text style={styles.classDays}>
-                        {cls.days.sort((a, b) => daysOrder.indexOf(a) - daysOrder.indexOf(b)).join(', ')}
-                      </Text>
-                      {cls.room && <Text style={styles.classDetail}>Room: {cls.room}</Text>}
-                      {cls.professor && <Text style={styles.classDetail}>Prof: {cls.professor}</Text>}
-                    </View>
-                    <View style={styles.classActions}>
-                      <TouchableOpacity onPress={() => openModal(actualIndex)}>
-                        <Text style={styles.editText}>Edit</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => deleteClass(actualIndex)}>
-                        <Text style={styles.deleteText}>Delete</Text>
-                      </TouchableOpacity>
-                    </View>
+              {schedule[day].map((cls) => (
+                <View key={cls.id} style={styles.classCard}>
+                  <View style={styles.classInfo}>
+                    <Text style={styles.className}>{cls.name}</Text>
+                    <Text style={styles.classTime}>
+                      {cls.startTime} - {cls.endTime}
+                    </Text>
+                    <Text style={styles.classDays}>
+                      {cls.days.sort((a, b) => daysOrder.indexOf(a) - daysOrder.indexOf(b)).join(', ')}
+                    </Text>
+                    {cls.room && <Text style={styles.classDetail}>Room: {cls.room}</Text>}
+                    {cls.professor && <Text style={styles.classDetail}>Prof: {cls.professor}</Text>}
                   </View>
-                );
-              })}
+                  <View style={styles.classActions}>
+                    <TouchableOpacity onPress={() => openModal(cls)}>
+                      <Text style={styles.editText}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => deleteClass(cls.id)}>
+                      <Text style={styles.deleteText}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
             </View>
           )
         ))}
@@ -131,7 +225,7 @@ export default function Schedule() {
           <ScrollView contentContainerStyle={styles.modalScrollContent}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>
-                {editingIndex !== null ? 'Edit Class' : 'Add New Class'}
+                {editingId ? 'Edit Class' : 'Add New Class'}
               </Text>
               
               <TextInput
@@ -224,6 +318,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     paddingTop: 50,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  loadingText: {
+    marginTop: 15,
+    fontSize: 16,
+    color: '#666',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -239,6 +344,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
   addButton: {
     backgroundColor: '#007AFF',
     paddingHorizontal: 15,
@@ -246,6 +355,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   addButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  logoutButton: {
+    backgroundColor: '#FF3B30',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  logoutButtonText: {
     color: '#fff',
     fontWeight: '600',
     fontSize: 16,

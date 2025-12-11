@@ -26,11 +26,9 @@ export default function LoginScreen({ navigation }) {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
         Alert.alert('Success', 'Logged in successfully!');
-        navigation.navigate('App');
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
         Alert.alert('Success', 'Account created successfully!');
-        navigation.navigate('App');
       }
     } catch (error) {
       let errorMessage = 'An error occurred';
